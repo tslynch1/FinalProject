@@ -1,0 +1,7 @@
+---
+title: "Model Fitting"
+author: "Trevor Lynch"
+format: html
+editor: visual
+---
+

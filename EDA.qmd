@@ -1,0 +1,75 @@
+---
+title: "EDA"
+author: "Trevor Lynch"
+format: html
+editor: visual
+---
+
+```{r}
+library(psych)
+library(tidyverse)
+```
+
+
+## Introduction
+
+briefly describes the data and the variables you have to work with (just discuss the ones you’ll investigate/use in your analysis).
+
+
+describes the purpose of your EDA and ultimate goal of modeling.
+
+
+## Data
+```{r}
+diabetes <- read.csv("diabetes_binary_health_indicators_BRFSS2015.csv", header = T)
+str(diabetes)
+
+diabetes_tib <- as_tibble(diabetes) |>
+  mutate(Diabetes_binary = as.factor(Diabetes_binary),
+         HighBP = as.factor(HighBP),
+         HighChol = as.factor(HighChol),
+         CholCheck = as.factor(CholCheck),
+         Smoker = as.factor(Smoker),
+         Stroke = as.factor(Stroke),
+         HeartDiseaseorAttack = as.factor(HeartDiseaseorAttack),
+         PhysActivity = as.factor(PhysActivity),
+         Fruits = as.factor(Fruits),
+         Veggies = as.factor(Veggies),
+         HvyAlcoholConsump = as.factor(HvyAlcoholConsump),
+         AnyHealthcare = as.factor(AnyHealthcare),
+         NoDocbcCost = as.factor(NoDocbcCost),
+         GenHlth = as.factor(GenHlth),
+         DiffWalk = as.factor(DiffWalk),
+         Sex = as.factor(Sex),
+         Age = as.factor(Age),
+         Education = as.factor(Education),
+         Income = as.factor(Income))
+
+# Check for missing values in the dataset
+apply(diabetes_tib, MARGIN = 2, function(x) sum(is.na(x)))
+# There are no missing values marked in the dataset
+
+# Produce Frequency tables for all of the factor variables
+apply(dplyr::select(diabetes_tib, -c(BMI, MentHlth, PhysHlth)), MARGIN = 2, table)
+
+# Check correlation of continuous variables
+diabetes_sub <- dplyr::select(diabetes_tib, c(Diabetes_binary, BMI, MentHlth, PhysHlth))
+cor(diabetes_sub, use = "pairwise.complete.obs")
+
+```
+Use a relative path to import the data. You likely want to convert a lot of the variables to factors with
+meaningful level names.
+Check on missingness, etc.
+```{r}
+
+```
+
+
+## Summarizations
+```{r}
+
+```
+
+
+At the end of the document: 
+[Click here for the Modeling Page](Modeling.html)
