@@ -3,6 +3,8 @@ title: "EDA"
 author: "Trevor Lynch"
 format: html
 editor: visual
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r}
@@ -13,17 +15,23 @@ library(tidyverse)
 
 ## Introduction
 
-briefly describes the data and the variables you have to work with (just discuss the ones you’ll investigate/use in your analysis).
+> The data that we are modeling from contains 21 predictor variables associated with the response variable `Diabetes_binary`, which indicates if a subject has been diagnosed with Diabetes or not. The variables that we will be investigating in our analysis are those related to the subject's health conditions. These include `HighBP`, `HighChol`, `BMI`, `GenHlth`, `Sex`, and `Age.` The others are related to the subject's lifestyle "choices", including `Smoker`, `PhysActivity`, `Fruits`, `Veggies`, and `DiffWalk`. All of these variables, with the exception of BMI, are binary predictor variables
 
-
-describes the purpose of your EDA and ultimate goal of modeling.
+> The overall purpose of this Exploratory Data Analysis is to gain background knowledge on all of our variables and determine which ones correspond to diagnoses of Diabetes in subjects. Ultimately, we want to develop a model that will be able to predict someone's Diabetes diagnosis based on the values of their predictor variables.
 
 
 ## Data
 ```{r}
+# Read in the data and generate generic summary statistics
 diabetes <- read.csv("diabetes_binary_health_indicators_BRFSS2015.csv", header = T)
 str(diabetes)
 
+psych::describe(diabetes)
+```
+
+
+```{r}
+# Convert binary predictors and response variable to factor variables
 diabetes_tib <- as_tibble(diabetes) |>
   mutate(Diabetes_binary = as.factor(Diabetes_binary),
          HighBP = as.factor(HighBP),
@@ -45,29 +53,165 @@ diabetes_tib <- as_tibble(diabetes) |>
          Education = as.factor(Education),
          Income = as.factor(Income))
 
+# Give all of the factor variables meaningful level names
+levels(diabetes_tib$Diabetes_binary) <- c("No Diabetes","Diabetes")
+levels(diabetes_tib$HighBP) <- c("Normal BP", "High BP")
+levels(diabetes_tib$HighChol) <- c("Normal Chol. Levels","High Chol. Levels")
+levels(diabetes_tib$CholCheck) <- c("No Chol. Check (prev. 5yrs)", "Chol. Checked (prev. 5yrs)")
+levels(diabetes_tib$Smoker) <- c("Non-Smoker","Smoker")
+levels(diabetes_tib$Stroke) <- c("No Stroke", "Stroke")
+levels(diabetes_tib$HeartDiseaseorAttack) <- c("No Heart Disease","Heart Diasease")
+levels(diabetes_tib$PhysActivity) <- c("Not Active", "Active")
+levels(diabetes_tib$Fruits) <- c("No Fruits in Diet","Fruits in Diet")
+levels(diabetes_tib$Veggies) <- c("No Veggies in Diet","Veggies in Diet")
+levels(diabetes_tib$HvyAlcoholConsump) <- c("Low-Normal Alchohol Consump.","Heavy Alcohol Consump.")
+levels(diabetes_tib$AnyHealthcare) <- c("No Healthcare", "Some Healthcare")
+levels(diabetes_tib$NoDocbcCost) <- c("No Cost Barrier","Cost Barrier to see Doctor")
+levels(diabetes_tib$GenHlth) <- c("Excellent", "Very Good", "Good", "Fair", "Poor")
+levels(diabetes_tib$DiffWalk) <- c("No Difficulty with Stairs","Difficulty with Stairs")
+levels(diabetes_tib$Sex) <- c("Female", "Male")
+levels(diabetes_tib$Age) <- c("18-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54", "55-59", "60-64", "65-69", "70-74", "75-79", "80+")
+levels(diabetes_tib$Education) <- c("No Schooling", "Attended Elementary", "Some High School", "High School Graduate", "Some College", "College Graduate")
+levels(diabetes_tib$Income) <- c("< $10k", "$10k - <$15k", "$15k - <$20k", "$20k - <$25k", "$25k - <$35k", "$35k - <$50k", "$50k - <$75k", "> $75k")
+
+# Create a final dataset that includes only the variables we will be using in our analysis
+diabetes_final <- diabetes_tib |>
+  dplyr::select(- c(CholCheck, Stroke, HeartDiseaseorAttack, HvyAlcoholConsump, MentHlth, PhysHlth, AnyHealthcare, NoDocbcCost, Education, Income))
+str(diabetes_final)
+
 # Check for missing values in the dataset
-apply(diabetes_tib, MARGIN = 2, function(x) sum(is.na(x)))
+apply(diabetes_final, MARGIN = 2, function(x) sum(is.na(x)))
 # There are no missing values marked in the dataset
 
-# Produce Frequency tables for all of the factor variables
-apply(dplyr::select(diabetes_tib, -c(BMI, MentHlth, PhysHlth)), MARGIN = 2, table)
-
-# Check correlation of continuous variables
-diabetes_sub <- dplyr::select(diabetes_tib, c(Diabetes_binary, BMI, MentHlth, PhysHlth))
-cor(diabetes_sub, use = "pairwise.complete.obs")
-
+# Produce 1-way Frequency tables for all of the factor variables
+apply(dplyr::select(diabetes_final, -c(BMI)), MARGIN = 2, table)
 ```
-Use a relative path to import the data. You likely want to convert a lot of the variables to factors with
-meaningful level names.
-Check on missingness, etc.
-```{r}
 
+```{r}
+# Generate 2-way frequency tables for factor variables
+bp_tib <- diabetes_tib |> 
+  group_by(Diabetes_binary,HighBP) |>
+  summarize(count = n()) |>
+  pivot_wider(names_from = HighBP, values_from = count)
+
+hc_tib <- diabetes_tib |> 
+  group_by(Diabetes_binary,HighChol) |>
+  summarize(count = n()) |>
+  pivot_wider(names_from = HighChol, values_from = count)
+
+smoker_tib <- diabetes_tib |> 
+  group_by(Diabetes_binary,Smoker) |>
+  summarize(count = n()) |>
+  pivot_wider(names_from = Smoker, values_from = count)
+
+pa_tib <- diabetes_tib |> 
+  group_by(Diabetes_binary,PhysActivity) |>
+  summarize(count = n()) |>
+  pivot_wider(names_from = PhysActivity, values_from = count)
+
+fruits_tib <- diabetes_tib |> 
+  group_by(Diabetes_binary,Fruits) |>
+  summarize(count = n()) |>
+  pivot_wider(names_from = Fruits, values_from = count)
+
+veggies_tib <- diabetes_tib |> 
+  group_by(Diabetes_binary,Veggies) |>
+  summarize(count = n()) |>
+  pivot_wider(names_from = Veggies, values_from = count)
+
+gh_tib <- diabetes_tib |> 
+  group_by(Diabetes_binary,GenHlth) |>
+  summarize(count = n()) |>
+  pivot_wider(names_from = GenHlth, values_from = count)
+
+diffwalk_tib <- diabetes_tib |> 
+  group_by(Diabetes_binary,DiffWalk) |>
+  summarize(count = n()) |>
+  pivot_wider(names_from = DiffWalk, values_from = count)
+
+sex_tib <- diabetes_tib |> 
+  group_by(Diabetes_binary,Sex) |>
+  summarize(count = n()) |>
+  pivot_wider(names_from = Sex, values_from = count)
+
+age_tib <- diabetes_tib |> 
+  group_by(Diabetes_binary,Age) |>
+  summarize(count = n()) |>
+  pivot_wider(names_from = Age, values_from = count)
+  
+## Print out the 2-way frequency tables
+# HighBP: 
+bp_tib
+# HighChol: 
+hc_tib
+# Smoker (Over 5 packs total lifetime):  
+smoker_tib
+# PhysActivity (In last 30 days):
+pa_tib
+# Fruits (consumed at least 1 per day): 
+fruits_tib
+# Veggies(consumed at least 1 per day):  
+veggies_tib
+# GenHlth: 
+gh_tib
+#DiffWalk:
+diffwalk_tib
+# Sex:
+sex_tib
+# Age:
+age_tib
+```
+
+
+
+```{r}
+# Summary statistics for the continuous variable
+summary(diabetes_final$BMI)
+```
+
+
+
+```{r}
+# Plotting distributions of the numeric predictor variables (BMI, MentHlth, and PhysHlth)
+BMI_density <- ggplot(diabetes_tib, aes(y = ..density.., x = BMI)) + geom_histogram(binwidth = 0.75) + labs(title = "BMI Histogram")
+BMI_density 
 ```
 
 
 ## Summarizations
 ```{r}
+# Create Stacked bar plot for categorical variables with Diabetes_binary variable
+base_bar <- ggplot(diabetes_tib, aes(fill = Diabetes_binary))
 
+# HighBP: 
+base_bar + geom_bar(aes(x = HighBP, y = ..count..), position = "dodge") + labs(title = "HighBP Bar Plot", y = "Count")
+
+# HighChol:
+base_bar + geom_bar(aes(x = HighChol, y = ..count..), position = "dodge") + labs(title = "HighChol Bar Plot", y = "Count")
+
+# Smoker:
+base_bar + geom_bar(aes(x = Smoker, y = ..count..), position = "dodge") + labs(title = "Smoker Bar Plot", y = "Count")
+
+# PhysActivity:
+base_bar + geom_bar(aes(x = PhysActivity, y = ..count..), position = "dodge") + labs(title = "PhysActivity Bar Plot", y = "Count")
+
+# Fruits:
+base_bar + geom_bar(aes(x = Fruits, y = ..count..), position = "dodge") + labs(title = "Fruits Bar Plot", y = "Count")
+
+# Veggies: 
+base_bar + geom_bar(aes(x = Veggies, y = ..count..), position = "dodge") + labs(title = "Veggies Bar Plot", y = "Count")
+
+# GenHlth:
+base_bar + geom_bar(aes(x = GenHlth, y = ..count..), position = "dodge") + labs(title = "GenHlth Bar Plot", y = "Count")
+
+# DiffWalk:
+base_bar + geom_bar(aes(x = DiffWalk, y = ..count..), position = "dodge") + labs(title = "DiffWalk Bar Plot", y = "Count")
+
+# Sex: 
+base_bar + geom_bar(aes(x = Sex, y = ..count..), position = "dodge") + labs(title = "Sex Bar Plot", y = "Count")
+
+# Age: 
+base_bar + geom_bar(aes(x = Age, y = ..count..), position = "dodge") + labs(title = "Age Bar Plot", y = "Count")
 ```
 
 

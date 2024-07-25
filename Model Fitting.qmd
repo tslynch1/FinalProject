@@ -5,3 +5,68 @@ format: html
 editor: visual
 ---
 
+
+```{r}
+library(caret)
+library(tidyverse)
+```
+
+## Introduction
+
+briefly describes the data and the variables you have to work with (just discuss the ones you’ll investigate/use in your analysis).
+
+
+```{r}
+# Split the data into a training and testing dataset
+set.seed(10101)
+training_index <- createDataPartition(diabetes_tib$Diabetes_binary, p = 0.7, list = F)
+training <- as.data.frame(diabetes_tib[training_index,])
+testing <- as.data.frame(diabetes_tib[-training_index,])
+```
+
+Information on LogLoss as a metric for our binary-response models
+> https://towardsdatascience.com/intuition-behind-log-loss-score-4e0c9979680a
+
+## Logistic Regression Models
+```{r}
+# Specify the resampling scheme
+train_ctrl <- trainControl(method = "cv", number = 3, classProbs = TRUE, verboseIter = T, summaryFunction = mnLogLoss)
+
+# No tuning parameters for the logistic regression models
+# Model 1 includes: 
+logreg_model1 <- train(Diabetes_binary ~ ., 
+                       data = training, 
+                       method = "glm",
+                       trControl = train_ctrl, 
+                       metric = "logLoss")
+
+# Model 2 includes: 
+logreg_model2 <- train(Diabetes_binary ~ , 
+                       data = training, 
+                       method = "glm",
+                       trControl = train_ctrl, 
+                       metric = "logLoss")
+
+# Model 3 includes: 
+logreg_model3 <- train(Diabetes_binary ~ ., 
+                       data = training, 
+                       method = "glm",
+                       trControl = train_ctrl, 
+                       metric = "logLoss")
+
+```
+
+## Classification Tree
+```{r}
+
+```
+
+## Random Forest
+```{r}
+
+```
+
+## Final Model Selection
+```{r}
+
+```
