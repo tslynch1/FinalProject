@@ -15,7 +15,7 @@ library(tidyverse)
 
 ## Introduction
 
-> The data that we are modeling from contains 21 predictor variables associated with the response variable `Diabetes_binary`, which indicates if a subject has been diagnosed with Diabetes or not. The variables that we will be investigating in our analysis are those related to the subject's health conditions. These include `HighBP`, `HighChol`, `BMI`, `GenHlth`, `Sex`, and `Age.` The others are related to the subject's lifestyle "choices", including `Smoker`, `PhysActivity`, `Fruits`, `Veggies`, and `DiffWalk`. All of these variables, with the exception of BMI, are binary predictor variables
+> The data that we are modeling from contains 21 predictor variables associated with the response variable `Diabetes_binary`, which indicates if a subject has been diagnosed with Diabetes or not. The variables that we will be investigating in our analysis are those related to the subject's health conditions. These include `HighBP`, `HighChol`, `BMI`, `GenHlth`, `Sex`, and `Age`. The others are related to the subject's lifestyle "choices", including `Smoker`, `PhysActivity`, `Fruits`, `Veggies`, and `DiffWalk`, along with `Sex` and `Age`. All of these variables, with the exception of BMI, are binary predictor variables.
 
 > The overall purpose of this Exploratory Data Analysis is to gain background knowledge on all of our variables and determine which ones correspond to diagnoses of Diabetes in subjects. Ultimately, we want to develop a model that will be able to predict someone's Diabetes diagnosis based on the values of their predictor variables.
 
@@ -24,70 +24,56 @@ library(tidyverse)
 ```{r}
 # Read in the data and generate generic summary statistics
 diabetes <- read.csv("diabetes_binary_health_indicators_BRFSS2015.csv", header = T)
-str(diabetes)
 
 psych::describe(diabetes)
 ```
 
 
 ```{r}
-# Convert binary predictors and response variable to factor variables
+# Convert binary predictors and response variable to factor variables (Not converting BMI)
 diabetes_tib <- as_tibble(diabetes) |>
   mutate(Diabetes_binary = as.factor(Diabetes_binary),
          HighBP = as.factor(HighBP),
          HighChol = as.factor(HighChol),
-         CholCheck = as.factor(CholCheck),
          Smoker = as.factor(Smoker),
-         Stroke = as.factor(Stroke),
-         HeartDiseaseorAttack = as.factor(HeartDiseaseorAttack),
          PhysActivity = as.factor(PhysActivity),
          Fruits = as.factor(Fruits),
          Veggies = as.factor(Veggies),
-         HvyAlcoholConsump = as.factor(HvyAlcoholConsump),
-         AnyHealthcare = as.factor(AnyHealthcare),
-         NoDocbcCost = as.factor(NoDocbcCost),
          GenHlth = as.factor(GenHlth),
          DiffWalk = as.factor(DiffWalk),
          Sex = as.factor(Sex),
-         Age = as.factor(Age),
-         Education = as.factor(Education),
-         Income = as.factor(Income))
-
+         Age = as.factor(Age))
+         
+         
 # Give all of the factor variables meaningful level names
-levels(diabetes_tib$Diabetes_binary) <- c("No Diabetes","Diabetes")
-levels(diabetes_tib$HighBP) <- c("Normal BP", "High BP")
-levels(diabetes_tib$HighChol) <- c("Normal Chol. Levels","High Chol. Levels")
-levels(diabetes_tib$CholCheck) <- c("No Chol. Check (prev. 5yrs)", "Chol. Checked (prev. 5yrs)")
+levels(diabetes_tib$Diabetes_binary) <- c("No_Diabetes","Diabetes")
+levels(diabetes_tib$HighBP) <- c("Normal_BP", "High_BP")
+levels(diabetes_tib$HighChol) <- c("Normal_Chol_Levels","High_Chol_Levels")
 levels(diabetes_tib$Smoker) <- c("Non-Smoker","Smoker")
-levels(diabetes_tib$Stroke) <- c("No Stroke", "Stroke")
-levels(diabetes_tib$HeartDiseaseorAttack) <- c("No Heart Disease","Heart Diasease")
-levels(diabetes_tib$PhysActivity) <- c("Not Active", "Active")
-levels(diabetes_tib$Fruits) <- c("No Fruits in Diet","Fruits in Diet")
-levels(diabetes_tib$Veggies) <- c("No Veggies in Diet","Veggies in Diet")
-levels(diabetes_tib$HvyAlcoholConsump) <- c("Low-Normal Alchohol Consump.","Heavy Alcohol Consump.")
-levels(diabetes_tib$AnyHealthcare) <- c("No Healthcare", "Some Healthcare")
-levels(diabetes_tib$NoDocbcCost) <- c("No Cost Barrier","Cost Barrier to see Doctor")
+levels(diabetes_tib$PhysActivity) <- c("Not_Active", "Active")
+levels(diabetes_tib$Fruits) <- c("No_Fruits_in_Diet","Fruits_in_Diet")
+levels(diabetes_tib$Veggies) <- c("No_Veggies_in_Diet","Veggies_in_Diet")
 levels(diabetes_tib$GenHlth) <- c("Excellent", "Very Good", "Good", "Fair", "Poor")
-levels(diabetes_tib$DiffWalk) <- c("No Difficulty with Stairs","Difficulty with Stairs")
+levels(diabetes_tib$DiffWalk) <- c("No_Difficulty_with_Stairs","Difficulty_with_Stairs")
 levels(diabetes_tib$Sex) <- c("Female", "Male")
 levels(diabetes_tib$Age) <- c("18-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54", "55-59", "60-64", "65-69", "70-74", "75-79", "80+")
-levels(diabetes_tib$Education) <- c("No Schooling", "Attended Elementary", "Some High School", "High School Graduate", "Some College", "College Graduate")
-levels(diabetes_tib$Income) <- c("< $10k", "$10k - <$15k", "$15k - <$20k", "$20k - <$25k", "$25k - <$35k", "$35k - <$50k", "$50k - <$75k", "> $75k")
 
 # Create a final dataset that includes only the variables we will be using in our analysis
 diabetes_final <- diabetes_tib |>
   dplyr::select(- c(CholCheck, Stroke, HeartDiseaseorAttack, HvyAlcoholConsump, MentHlth, PhysHlth, AnyHealthcare, NoDocbcCost, Education, Income))
 str(diabetes_final)
+```
 
+
+## Summarizations
+```{r}
 # Check for missing values in the dataset
 apply(diabetes_final, MARGIN = 2, function(x) sum(is.na(x)))
 # There are no missing values marked in the dataset
 
 # Produce 1-way Frequency tables for all of the factor variables
 apply(dplyr::select(diabetes_final, -c(BMI)), MARGIN = 2, table)
-```
 
-```{r}
 # Generate 2-way frequency tables for factor variables
 bp_tib <- diabetes_tib |> 
   group_by(Diabetes_binary,HighBP) |>
@@ -163,12 +149,10 @@ age_tib
 ```
 
 
-
 ```{r}
 # Summary statistics for the continuous variable
 summary(diabetes_final$BMI)
 ```
-
 
 
 ```{r}
@@ -178,7 +162,6 @@ BMI_density
 ```
 
 
-## Summarizations
 ```{r}
 # Create Stacked bar plot for categorical variables with Diabetes_binary variable
 base_bar <- ggplot(diabetes_tib, aes(fill = Diabetes_binary))

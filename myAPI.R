@@ -1,54 +1,33 @@
 ## myAPI.R file
 library(GGally)
+library(plumber)
 
-#Send a message
-#* @get /readme
-function(){
-  "This is our basic API"
-}
+# Read in the data we are using for our model
+load("diabetes_final")
 
-#http://localhost:PORT/readme
+best_model <- train(make.names(Diabetes_binary) ~ Smoker + PhysActivity + Fruits + Veggies + DiffWalk + Sex + Age, 
+                    data = training, 
+                    method = "rpart",
+                    trControl = train_ctrl, 
+                    metric = "logLoss",
+                    tuneGrid = data.frame(cp = seq(0.00001, 0.01001, by = 0.0001)))
 
 
-#Echo the parameter that was sent in
-#* @param msg The message to echo back.
-#* @get /echo
-function(msg=""){
-  list(msg = paste0("The message is: '", msg, "'"))
-}
-
-#http://localhost:PORT/echo?msg=Hey
-
-#Find natural log of a number
-#* @param num Number to find ln of
-#* @get /ln
-function(num){
-  log(as.numeric(num))
-}
-
-#http://localhost:PORT/ln?num=40
-
-#Find multiple of two numbers
-#* @param num1 1st number
-#* @param num2 2nd number
-#* @get /mult
-function(num1, num2){
-  as.numeric(num1)*as.numeric(num2)
-}
-
-#http://localhost:PORT/mult?num1=10&num2=10
-
-#* Plot histogram of iris data
-#* @png
-#* @param type base or GGally
-#* @get /plotiris
-function(type="base"){
-  if(type == "GGally"){
-    a<- ggpairs(iris)
-    print(a)
-  } else {
-    pairs(iris)
+# Access data from the API with the -pred- and -info- endpoints
+#* @param pred list of predictor variables 
+#* @param info information on author and website
+#* @get / model
+function(pred, info){
+  if (info = TRUE) {
+    paste0("Name: Trevor Lynch")
+    paste0("____________________INSERT URL FOR RENDERED GITHUB PAGES SITE HERE________________________")
+  }
+  else {
+    
   }
 }
 
-#http://localhost:PORT/plotiris?type=GGally
+#http://localhost:PORT/model?pred=-------&info=T
+#http://localhost:PORT/model?pred=-------&info=F
+#http://localhost:PORT/model?info=T
+
