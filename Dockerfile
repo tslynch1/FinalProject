@@ -5,8 +5,7 @@ FROM rocker/r-ver:4.4.1
 RUN apt-get update -qq && apt-get install -y  libssl-dev  libcurl4-gnutls-dev  libpng-dev
     
     
-# install plumber, GGally
-RUN R -e "install.packages('GGally')"
+# install plumber
 RUN R -e "install.packages('plumber')"
 
 # copy everything from the current directory into the container

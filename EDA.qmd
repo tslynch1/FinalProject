@@ -199,4 +199,4 @@ base_bar + geom_bar(aes(x = Age, y = ..count..), position = "dodge") + labs(titl
 
 
 At the end of the document: 
-[Click here for the Modeling Page](Modeling.html)
+[Click here for the Model Fitting Page](docs/ModelFitting.html)

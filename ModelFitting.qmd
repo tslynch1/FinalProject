@@ -1,0 +1,146 @@
+---
+title: "Model Fitting"
+author: "Trevor Lynch"
+format: html
+editor: visual
+---
+
+```{r, warning = F, message = F}
+library(caret)
+```
+
+## Introduction
+
+> The overall purpose of this Model Fitting page is to formulate 3 candidate models for each type, Logistic Regression, Classification Trees, and Random Forest models. The candidate models differ in the predictor variables that are included to estimate classification of an observation as being diagnosed with Diabetes or not.
+
+```{r}
+# Split the data into a training and testing dataset
+set.seed(10101)
+training_index <- createDataPartition(diabetes_final$Diabetes_binary, p = 0.7, list = F)
+training <- as.data.frame(diabetes_tib[training_index,])
+testing <- as.data.frame(diabetes_tib[-training_index,])
+```
+
+Information on LogLoss as a metric for our binary-response models: LogLoss is a metric used to evaluate the performance of classification models, particularly those predicting probabilities for binary outcomes. This metric differs from the metric, Accuracy, by penalizing incorrect predictions more heavily as the predictions become more confident. It quantifies the difference between the predicted probabilities and the actual binary outcomes, with a lower log loss indicating better model performance when comparing different models on the same dataset.
+
+## Logistic Regression Models
+
+> The goal of logistic regression is to model the probability that a given input (or set of inputs) belongs to a particular class. The logistic function ensures that predictions are constrained between 0 and 1, which is intuitive for binary outcomes. For all of these reasons, logistic regression models are best applied to models that include a binary response variable.
+
+```{r}
+# Specify the resampling scheme to be used in all models
+train_ctrl <- trainControl(method = "cv", 
+                           number = 3, 
+                           classProbs = TRUE, 
+                           summaryFunction = mnLogLoss,
+                           verboseIter = T)
+
+# No tuning parameters for the logistic regression models
+# Model 1 includes all 11 predictor variables: 
+logreg_model1 <- train(make.names(Diabetes_binary) ~ ., 
+                       data = training, 
+                       method = "glm",
+                       trControl = train_ctrl, 
+                       metric = "logLoss")
+
+# Produce the probability of Diabetes Diagnosis or not with prediction. 
+log_mod1_preds <- predict(logreg_model1, newdata = testing, type = "prob")
+
+# Determine the logLoss for by comparing the actual diagnoses from the testing data set with the ones that were predicted.
+log_mod1_logloss <- logreg_model1$results$logLoss
+
+# Model 2 includes the predictor variables related to subjects' health conditions: 
+logreg_model2 <- train(make.names(Diabetes_binary) ~ HighBP + HighChol + BMI + GenHlth + Sex + Age, 
+                       data = training, 
+                       method = "glm",
+                       trControl = train_ctrl, 
+                       metric = "logLoss")
+
+# Produce the probability of Diabetes Diagnosis or not with prediction. 
+log_mod2_preds <- predict(logreg_model2, newdata = testing, type = "prob")
+
+# Determine the logLoss for by comparing the actual diagnoses from the testing data set with the ones that were predicted.
+log_mod2_logloss <- logreg_model2$results$logLoss
+
+# Model 3 includes predictor variables related to subjects' lifestyle, also including Sex and Age: 
+logreg_model3 <- train(make.names(Diabetes_binary) ~ Smoker + PhysActivity + Fruits + Veggies + DiffWalk + Sex + Age, 
+                       data = training, 
+                       method = "glm",
+                       trControl = train_ctrl, 
+                       metric = "logLoss")
+
+# Produce the probability of Diabetes Diagnosis or not with prediction. 
+log_mod3_preds <- predict(logreg_model3, newdata = testing, type = "prob")
+
+# Determine the logLoss for by comparing the actual diagnoses from the testing data set with the ones that were predicted.
+log_mod3_logloss <- logreg_model3$results$logLoss
+
+# Compile the logLoss results from the Logistic Regression models
+logistic_results <- data.frame(Model = c("Logisitic Reg. Model 1", "Logisitic Reg. Model 2", "Logisitic Reg. Model 3"), logLoss = c(log_mod1_logloss, log_mod2_logloss, log_mod3_logloss))
+logistic_results
+
+logreg_mod_logloss <- min(logistic_results$logLoss)
+logreg_model_choice <- logistic_results$Model[which.min(logistic_results$logLoss)]
+```
+
+**`r logreg_model_choice`** produced the lowest logLoss value (**`r logreg_mod_logloss`**) among the Logistic Regression models and is therefore the model of choice among these 3. These predictor variables will be used for the Classification Tree and Random Forest modeling portions.
+
+## Classification Tree
+
+> A classification tree model is a decision tree that is used for classifying data into categories based on the predictor variable values. The tree model is created by splitting the data into subsets based on the values of predictor variables that maximize the separation of classes. It is also notably useful because it does not assume a linear relationship between the feature variables and the response, so it can handle non-linear relationships between those. A classification tree model is appropriate to use in this context because we are trying to predict a binary classification of 'Diabetes' or 'No Diabetes' deagnoses for the Diabetes data.
+
+```{r}
+# There is one parameter, 'cp', that needs to be specified for each model. Cross validation will be used to find the optimal 'cp' value for our model
+# Model  includes predictor variables related to subjects' lifestyle, also including Sex and Age: 
+ctree_model <- train(make.names(Diabetes_binary) ~ ., 
+                      data = training, 
+                      method = "rpart",
+                      trControl = train_ctrl, 
+                      metric = "logLoss",
+                      tuneGrid = data.frame(cp = seq(0.000001, 0.0002, by = 0.000001)))
+
+# Compile the logLoss results from the Classification Tree models
+ctree_results <- data.frame(cp = ctree_model$results$cp, logLoss = ctree_model$results$logLoss)
+
+ctree_mod_logloss <- min(ctree_results$logLoss)
+ctree_mod_cp <- ctree_results$cp[which.min(ctree_results$logLoss)]
+```
+
+The model with the tuning parameter value of **cp = `r ctree_mod_cp`** produced the lowest logLoss value (**`r ctree_mod_logloss`**) among the Random Forest models and is therefore the model of choice.
+
+## Random Forest
+
+> A Random Forest model is an ensemble method that incorporates multiple decision trees to improve the accuracy and robustness of predictions. The technique uses bootstrapping (splitting into random subsets of the data) and random selection of the predictor variables. The randomness involved with selection of predictor variables is done to reduce overfitting of the model. The final prediction for an observations classification is made by aggregating the predictions from all trees and taking a "majority vote" on what the classification of the observation is. It is appropriate to use for models with a binary response variable since it can be used to perform Classification, similar to the methods discussed above. The ensemble approach of the random forest models mitigate the overfitting, or lack of generalizability, that comes with single tree models.
+
+```{r}
+# There is one parameter, 'mtry', that needs to be specified for each model. Cross validation will be used to find the optimal 'mtry' value for our model  
+
+# Model 3 includes predictor variables related to subjects' lifestyle, also including Sex and Age: 
+rf_model <- train(make.names(Diabetes_binary) ~ ., 
+                      data = training, 
+                      method = "rf",
+                      trControl = train_ctrl, 
+                      metric = "logLoss",
+                      tuneGrid = data.frame(mtry = 1:11))
+
+# Compile the logLoss results from the Random Forest models
+rf_results <- data.frame(mtry = rf_model$results$mtry, logLoss = rf_model$results$logLoss)
+rf_results
+
+rf_mod_logloss <- min(rf_results$logLoss)
+rf_mod_mtry <- rf_results$mtry[which.min(rf_results$logLoss)]
+```
+
+The model with the tuning parameter value of **mtry = `r rf_mod_mtry`** produced the lowest logLoss value (**`r rf_mod_logloss`**) among the Random Forest models and is therefore the model of choice.
+
+## Final Model Selection
+
+```{r}
+final_results <- data.frame(Model = c("Best Logistic Regression Model", "Best Classification Tree Model", "Best Random Forest Model"), logLoss = c(log_mod1_logloss, ctree_mod_logloss, rf_mod_logloss))
+final_results
+
+min_overall_logloss <- min(final_results$logLoss)
+min_model_choice <- final_results$Model[which.min(final_results$logLoss)]
+```
+
+The overall best model was found to be the **`r min_model_choice`**, with a logLoss value of **`r min_overall_logloss`**, after comparing the best Logistic Regression model, Classification Tree, and Random Forest model.

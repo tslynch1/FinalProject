@@ -1,33 +1,60 @@
 ## myAPI.R file
-library(GGally)
 library(plumber)
 
 # Read in the data we are using for our model
 load("diabetes_final")
 
-best_model <- train(make.names(Diabetes_binary) ~ Smoker + PhysActivity + Fruits + Veggies + DiffWalk + Sex + Age, 
-                    data = training, 
-                    method = "rpart",
-                    trControl = train_ctrl, 
-                    metric = "logLoss",
-                    tuneGrid = data.frame(cp = seq(0.00001, 0.01001, by = 0.0001)))
+best_model <- train(make.names(Diabetes_binary) ~ ., 
+                               data = training, 
+                               method = "glm",
+                               trControl = train_ctrl, 
+                               metric = "logLoss")
 
-
-# Access data from the API with the -pred- and -info- endpoints
-#* @param pred list of predictor variables 
-#* @param info information on author and website
-#* @get / model
-function(pred, info){
-  if (info = TRUE) {
-    paste0("Name: Trevor Lynch")
-    paste0("____________________INSERT URL FOR RENDERED GITHUB PAGES SITE HERE________________________")
-  }
-  else {
+# Access summary data from the API with the pred endpoint
+#* @param pred_list list of predictor variables to summarize (separate with comma)
+#* @get / pred
+function(pred_list){
+  # Collect all arguments into a list
+  var_list <- list(pred_list)
+  
+  # Initialize an empty list to store results
+  results <- list()
+  
+  # Process each variable in the list
+  for (i in seq_along(var_list)) {
+    var <- var_list[[i]]
     
+    if (is.numeric(var)) {
+      # Calculate the average of numeric variables
+      result <- mean(var, na.rm = TRUE)
+    } else if (is.factor(var) || is.character(var)) {
+      # Find the most frequent value for categorical variables
+      freq_table <- table(var)
+      most_frequent_value <- names(freq_table)[which.max(freq_table)]
+      result <- most_frequent_value
+    } else {
+      warning(paste("Skipping unsupported type in variable", i, ":", class(var)))
+      result <- NA
+    }
+    
+    # Store the result
+    results[[paste("Predictor", i)]] <- result
   }
+  
+  return(results)
 }
 
-#http://localhost:PORT/model?pred=-------&info=T
-#http://localhost:PORT/model?pred=-------&info=F
-#http://localhost:PORT/model?info=T
 
+#http://localhost:8000/pred?pred_list=
+#http://localhost:8000/pred?pred_list=
+#http://localhost:8000/pred?pred_list=
+
+
+# Display name and link to GitHub pages from the API with the info endpoint
+#* @get / info
+function(){
+  "AUTHOR: Trevor Lynch"
+  "URL FOR GITHUB PAGES: ___"
+}
+
+#http://localhost:8000/info
