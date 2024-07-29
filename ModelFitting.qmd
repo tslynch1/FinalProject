@@ -13,7 +13,46 @@ library(caret)
 
 > The overall purpose of this Model Fitting page is to formulate 3 candidate models for each type, Logistic Regression, Classification Trees, and Random Forest models. The candidate models differ in the predictor variables that are included to estimate classification of an observation as being diagnosed with Diabetes or not.
 
-```{r}
+```{r, include = FALSE}
+# Load the diabetes_final dataset to use for model fitting
+
+# Read in the data and generate generic summary statistics
+diabetes <- read.csv("diabetes_binary_health_indicators_BRFSS2015.csv", header = T)
+
+# Convert binary predictors and response variable to factor variables (Not converting BMI)
+diabetes_tib <- as_tibble(diabetes) |>
+  mutate(Diabetes_binary = as.factor(Diabetes_binary),
+         HighBP = as.factor(HighBP),
+         HighChol = as.factor(HighChol),
+         Smoker = as.factor(Smoker),
+         PhysActivity = as.factor(PhysActivity),
+         Fruits = as.factor(Fruits),
+         Veggies = as.factor(Veggies),
+         GenHlth = as.factor(GenHlth),
+         DiffWalk = as.factor(DiffWalk),
+         Sex = as.factor(Sex),
+         Age = as.factor(Age))
+         
+         
+# Give all of the factor variables meaningful level names
+levels(diabetes_tib$Diabetes_binary) <- c("No_Diabetes","Diabetes")
+levels(diabetes_tib$HighBP) <- c("Normal_BP", "High_BP")
+levels(diabetes_tib$HighChol) <- c("Normal_Chol_Levels","High_Chol_Levels")
+levels(diabetes_tib$Smoker) <- c("Non-Smoker","Smoker")
+levels(diabetes_tib$PhysActivity) <- c("Not_Active", "Active")
+levels(diabetes_tib$Fruits) <- c("No_Fruits_in_Diet","Fruits_in_Diet")
+levels(diabetes_tib$Veggies) <- c("No_Veggies_in_Diet","Veggies_in_Diet")
+levels(diabetes_tib$GenHlth) <- c("Excellent", "Very Good", "Good", "Fair", "Poor")
+levels(diabetes_tib$DiffWalk) <- c("No_Difficulty_with_Stairs","Difficulty_with_Stairs")
+levels(diabetes_tib$Sex) <- c("Female", "Male")
+levels(diabetes_tib$Age) <- c("18-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54", "55-59", "60-64", "65-69", "70-74", "75-79", "80+")
+
+# Create a final dataset that includes only the variables we will be using in our analysis
+diabetes_final <- diabetes_tib |>
+  dplyr::select(- c(CholCheck, Stroke, HeartDiseaseorAttack, HvyAlcoholConsump, MentHlth, PhysHlth, AnyHealthcare, NoDocbcCost, Education, Income))
+```
+
+``` {r}
 # Split the data into a training and testing dataset
 set.seed(10101)
 training_index <- createDataPartition(diabetes_final$Diabetes_binary, p = 0.7, list = F)
@@ -21,7 +60,8 @@ training <- as.data.frame(diabetes_tib[training_index,])
 testing <- as.data.frame(diabetes_tib[-training_index,])
 ```
 
-Information on LogLoss as a metric for our binary-response models: LogLoss is a metric used to evaluate the performance of classification models, particularly those predicting probabilities for binary outcomes. This metric differs from the metric, Accuracy, by penalizing incorrect predictions more heavily as the predictions become more confident. It quantifies the difference between the predicted probabilities and the actual binary outcomes, with a lower log loss indicating better model performance when comparing different models on the same dataset.
+Information on LogLoss as a metric for our binary-response models: 
+> LogLoss is a metric used to evaluate the performance of classification models, particularly those predicting probabilities for binary outcomes. This metric differs from the metric, Accuracy, by penalizing incorrect predictions more heavily as the predictions become more confident. It quantifies the difference between the predicted probabilities and the actual binary outcomes, with a lower log loss indicating better model performance when comparing different models on the same dataset.
 
 ## Logistic Regression Models
 
