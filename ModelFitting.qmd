@@ -7,6 +7,7 @@ editor: visual
 
 ```{r, warning = F, message = F}
 library(caret)
+library(tidyverse)
 ```
 
 ## Introduction
