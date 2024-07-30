@@ -5,8 +5,10 @@ FROM rocker/r-ver:4.4.1
 RUN apt-get update -qq && apt-get install -y  libssl-dev  libcurl4-gnutls-dev  libpng-dev
     
     
-# install plumber
+# install plumber, tidyverse, and caret packages. They are used in the myAPI.R script
 RUN R -e "install.packages('plumber')"
+RUN R -e "install.packages('tidyverse')"
+RUN R -e "install.packages('caret')"
 
 # copy everything from the current directory into the container
 COPY myAPI.R myAPI.R

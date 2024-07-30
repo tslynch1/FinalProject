@@ -16,7 +16,6 @@ library(tidyverse)
 
 ```{r, include = FALSE}
 # Load the diabetes_final dataset to use for model fitting
-
 # Read in the data and generate generic summary statistics
 diabetes <- read.csv("diabetes_binary_health_indicators_BRFSS2015.csv", header = T)
 
